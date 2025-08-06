@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHADOWEED - Synaesthetic Shooter</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Orbitron', monospace;
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(120, 50, 0, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 50, 120, 0.1) 0%, transparent 20%),
+                linear-gradient(180deg, #0a0a0a 0%, #050505 100%);
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            position: relative;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .game-header {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .game-title {
+            font-size: 3rem;
+            font-weight: 900;
+            margin-bottom: 5px;
+            background: linear-gradient(45deg, #ff5500, #ffaa00);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 15px rgba(255, 85, 0, 0.5);
+            letter-spacing: 3px;
+        }
+        
+        .game-subtitle {
+            font-size: 1rem;
+            color: #ff7700;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        
+        canvas {
+            border: 2px solid #333;
+            box-shadow: 0 0 20px rgba(255, 85, 0, 0.3);
+            background-color: #000;
+            position: relative;
+            z-index: 5;
+        }
+        
+        .game-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            z-index: 10;
+        }
+        
+        .control-btn {
+            padding: 10px 20px;
+            background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+            border: 1px solid #ff5500;
+            color: #ff7700;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .control-btn:hover {
+            background: linear-gradient(45deg, #2a2a2a, #3a3a3a);
+            box-shadow: 0 0 10px rgba(255, 85, 0, 0.5);
+        }
+        
+        .data-panel {
+            position: absolute;
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 10;
+        }
+        
+        .panel-header {
+            color: #ff5500;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .panel-status {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #00ff00;
+            margin-left: 5px;
+        }
+        
+        .panel-status.offline {
+            background-color: #ff0000;
+        }
+        
+        .game-stats {
+            top: 100px;
+            left: 20px;
+            width: 200px;
+        }
+        
+        .stat-item {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .stat-label {
+            color: #888;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+        
+        .stat-value {
+            font-weight: 700;
+            color: #ff7700;
+            font-size: 0.9rem;
+        }
+        
+        .health-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #222;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+            border: 1px solid #333;
+        }
+        
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff3366, #ff6633);
+            transition: width 0.5s ease;
+        }
+        
+        .garden-panel {
+            top: 100px;
+            right: 20px;
+            width: 200px;
+        }
+        
+        .garden-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .garden-value {
+            font-weight: 700;
+            color: #00ff88;
+            font-size: 0.9rem;
+        }
+        
+        .flower-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #ff55aa;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+        
+        .system-panel {
+            bottom: 80px;
+            left: 20px;
+            width: 250px;
+        }
+        
+        .system-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.7rem;
+        }
+        
+        .system-name {
+            color: #888;
+        }
+        
+        .system-value {
+            color: #00aaff;
+        }
+        
+        .system-value.online {
+            color: #00ff88;
+        }
+        
+        .system-value.offline {
+            color: #ff5555;
+        }
+        
+        .audio-panel {
+            bottom: 80px;
+            right: 20px;
+            width: 200px;
+        }
+        
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .audio-toggle {
+            background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+            border: 1px solid #ff5500;
+            color: #ff7700;
+            border-radius: 3px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .audio-level {
+            width: 100px;
+            height: 6px;
+            background: #222;
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+        
+        .audio-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00aaff, #00ffff);
+            transition: width 0.3s ease;
+        }
+        
+        .start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            backdrop-filter: blur(5px);
+        }
+        
+        .start-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 800px;
+            padding: 0 20px;
+            border: 2px solid #ff5500;
+            border-radius: 10px;
+            padding: 30px;
+            background: rgba(10, 10, 10, 0.8);
+            box-shadow: 0 0 30px rgba(255, 85, 0, 0.3);
+        }
+        
+        .start-btn {
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            background: linear-gradient(45deg, #ff5500, #ff7700);
+            border: none;
+            color: #000;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 30px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 85, 0, 0.7);
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            backdrop-filter: blur(5px);
+        }
+        
+        .game-over-content {
+            border: 2px solid #ff5500;
+            border-radius: 10px;
+            padding: 30px;
+            background: rgba(10, 10, 10, 0.8);
+            box-shadow: 0 0 30px rgba(255, 85, 0, 0.3);
+            text-align: center;
+        }
+        
+        .game-over h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #ff3366;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .game-over p {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #ff7700;
+        }
+        
+        .instructions {
+            background: rgba(20, 20, 20, 0.7);
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #333;
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        .instructions h3 {
+            margin-bottom: 15px;
+            color: #ff5500;
+            font-size: 1rem;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .instructions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .instruction-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        .instruction-icon {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+            border: 1px solid #ff5500;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .instruction-text {
+            font-size: 0.7rem;
+            line-height: 1.4;
+            color: #aaa;
+        }
+        
+        .game-description {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #aaa;
+            max-width: 600px;
+        }
+        
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.7rem;
+            border-bottom: 1px solid #222;
+            padding-bottom: 5px;
+        }
+        
+        .data-label {
+            color: #888;
+        }
+        
+        .data-value {
+            color: #00ffff;
+        }
+        
+        .corner-decoration {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ff5500;
+        }
+        
+        .corner-decoration.top-left {
+            top: -2px;
+            left: -2px;
+            border-right: none;
+            border-bottom: none;
+        }
+        
+        .corner-decoration.top-right {
+            top: -2px;
+            right: -2px;
+            border-left: none;
+            border-bottom: none;
+        }
+        
+        .corner-decoration.bottom-left {
+            bottom: -2px;
+            left: -2px;
+            border-right: none;
+            border-top: none;
+        }
+        
+        .corner-decoration.bottom-right {
+            bottom: -2px;
+            right: -2px;
+            border-left: none;
+            border-top: none;
+        }
+        
+        @media (max-width: 768px) {
+            .instructions-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .game-title {
+                font-size: 2rem;
+            }
+            
+            .data-panel {
+                width: 150px !important;
+                padding: 10px;
+            }
+            
+            .panel-header {
+                font-size: 0.7rem;
+            }
+            
+            .stat-value, .garden-value {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const ShadoweedGame = () => {
+            const canvasRef = useRef(null);
+            const [gameStarted, setGameStarted] = useState(false);
+            const [gameOver, setGameOver] = useState(false);
+            const [score, setScore] = useState(0);
+            const [health, setHealth] = useState(100);
+            const [flowers, setFlowers] = useState(0);
+            const [griefLevel, setGriefLevel] = useState(0);
+            const [audioEnabled, setAudioEnabled] = useState(true);
+            const [audioLevel, setAudioLevel] = useState(30);
+            
+            // Audio context
+            const synthRef = useRef(null);
+            const padRef = useRef(null);
+            const droneRef = useRef(null);
+            const gainRef = useRef(null);
+            const filterRef = useRef(null);
+            const reverbRef = useRef(null);
+            const delayRef = useRef(null);
+            
+            // Game state
+            const gameStateRef = useRef({
+                player: { x: 400, y: 500, width: 40, height: 40, speed: 5 },
+                bullets: [],
+                enemies: [],
+                flowers: [],
+                particles: [],
+                lastShot: 0,
+                shotCooldown: 300,
+                enemySpawnRate: 1000,
+                lastEnemySpawn: 0,
+                keys: {},
+                gameRunning: false,
+                rhythm: [],
+                lastRhythmTime: 0,
+                visualIntensity: 0,
+                audioIntensity: 0,
+                audioInitialized: false,
+                gridOffset: 0
+            });
+            
+            // Initialize audio
+            useEffect(() => {
+                if (gameStarted && audioEnabled && !gameStateRef.current.audioInitialized) {
+                    const initAudio = async () => {
+                        try {
+                            await Tone.start();
+                            
+                            // Create synths
+                            synthRef.current = new Tone.PolySynth(Tone.Synth).toDestination();
+                            
+                            // Create ambient pad for background
+                            padRef.current = new Tone.PolySynth(Tone.AMSynth).toDestination();
+                            
+                            // Create a melodic drone using MembraneSynth
+                            droneRef.current = new Tone.MembraneSynth({
+                                pitchDecay: 0.05,
+                                octaves: 2,
+                                oscillator: {
+                                    type: "sine"
+                                }
+                            }).toDestination();
+                            
+                            // Create effects
+                            reverbRef.current = new Tone.Reverb(4).toDestination();
+                            delayRef.current = new Tone.FeedbackDelay(0.5, 0.7).toDestination();
+                            filterRef.current = new Tone.Filter(800, "lowpass").toDestination();
+                            gainRef.current = new Tone.Gain(0.3).toDestination();
+                            
+                            // Connect audio chain
+                            padRef.current.connect(reverbRef.current);
+                            reverbRef.current.connect(delayRef.current);
+                            delayRef.current.connect(filterRef.current);
+                            filterRef.current.connect(gainRef.current);
+                            
+                            // Start ambient pad with gentle chord progression
+                            const chordProgression = [
+                                ["C3", "E3", "G3"],
+                                ["A2", "C3", "E3"],
+                                ["F2", "A2", "C3"],
+                                ["G2", "B2", "D3"]
+                            ];
+                            
+                            let chordIndex = 0;
+                            const playChord = () => {
+                                if (padRef.current && gameStarted && audioEnabled) {
+                                    padRef.current.triggerAttackRelease(chordProgression[chordIndex], "8n");
+                                    chordIndex = (chordIndex + 1) % chordProgression.length;
+                                }
+                            };
+                            
+                            // Play initial chord
+                            playChord();
+                            
+                            // Set up chord progression loop
+                            const chordInterval = setInterval(() => {
+                                if (gameStarted && audioEnabled) {
+                                    playChord();
+                                } else {
+                                    clearInterval(chordInterval);
+                                }
+                            }, 2000);
+                            
+                            // Start a gentle drone
+                            if (droneRef.current) {
+                                droneRef.current.triggerAttackRelease("C2", "2n");
+                            }
+                            
+                            gameStateRef.current.audioInitialized = true;
+                        } catch (error) {
+                            console.error("Error initializing audio:", error);
+                        }
+                    };
+                    
+                    initAudio();
+                }
+                
+                return () => {
+                    if (padRef.current) {
+                        padRef.current.releaseAll();
+                    }
+                    if (droneRef.current) {
+                        droneRef.current.releaseAll();
+                    }
+                };
+            }, [gameStarted, audioEnabled]);
+            
+            // Setup game
+            useEffect(() => {
+                if (!gameStarted) return;
+                
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                const gameState = gameStateRef.current;
+                
+                // Set canvas size
+                canvas.width = 800;
+                canvas.height = 600;
+                
+                // Initialize player
+                gameState.player = { 
+                    x: canvas.width / 2 - 20, 
+                    y: canvas.height - 100, 
+                    width: 40, 
+                    height: 40, 
+                    speed: 5 
+                };
+                
+                // Start game loop
+                gameState.gameRunning = true;
+                let lastTime = 0;
+                
+                const gameLoop = (timestamp) => {
+                    if (!gameState.gameRunning) return;
+                    
+                    const deltaTime = timestamp - lastTime;
+                    lastTime = timestamp;
+                    
+                    updateGame(deltaTime);
+                    renderGame(ctx, canvas.width, canvas.height);
+                    
+                    requestAnimationFrame(gameLoop);
+                };
+                
+                requestAnimationFrame(gameLoop);
+                
+                // Event listeners
+                const handleKeyDown = (e) => {
+                    gameState.keys[e.key] = true;
+                    
+                    // Track rhythm for visual effects
+                    const now = Date.now();
+                    if (now - gameState.lastRhythmTime > 100) {
+                        gameState.rhythm.push(now);
+                        if (gameState.rhythm.length > 10) {
+                            gameState.rhythm.shift();
+                        }
+                        gameState.lastRhythmTime = now;
+                        
+                        // Update visual intensity based on rhythm
+                        if (gameState.rhythm.length > 2) {
+                            const intervals = [];
+                            for (let i = 1; i < gameState.rhythm.length; i++) {
+                                intervals.push(gameState.rhythm[i] - gameState.rhythm[i-1]);
+                            }
+                            const avgInterval = intervals.reduce((a, b) => a + b) / intervals.length;
+                            gameState.visualIntensity = Math.min(1, 500 / avgInterval);
+                        }
+                        
+                        // Play rhythm sound
+                        if (synthRef.current && audioEnabled) {
+                            const note = ["C4", "D4", "E4", "F4", "G4"][Math.floor(Math.random() * 5)];
+                            synthRef.current.triggerAttackRelease(note, "16n");
+                        }
+                    }
+                };
+                
+                const handleKeyUp = (e) => {
+                    gameState.keys[e.key] = false;
+                };
+                
+                window.addEventListener('keydown', handleKeyDown);
+                window.addEventListener('keyup', handleKeyUp);
+                
+                return () => {
+                    window.removeEventListener('keydown', handleKeyDown);
+                    window.removeEventListener('keyup', handleKeyUp);
+                    gameState.gameRunning = false;
+                };
+            }, [gameStarted, audioEnabled]);
+            
+            const updateGame = (deltaTime) => {
+                const gameState = gameStateRef.current;
+                const player = gameState.player;
+                
+                // Update grid offset for background animation
+                gameState.gridOffset = (gameState.gridOffset + 0.1) % 40;
+                
+                // Player movement
+                if (gameState.keys['ArrowLeft'] || gameState.keys['a']) {
+                    player.x = Math.max(0, player.x - player.speed);
+                }
+                if (gameState.keys['ArrowRight'] || gameState.keys['d']) {
+                    player.x = Math.min(canvasRef.current.width - player.width, player.x + player.speed);
+                }
+                if (gameState.keys['ArrowUp'] || gameState.keys['w']) {
+                    player.y = Math.max(0, player.y - player.speed);
+                }
+                if (gameState.keys['ArrowDown'] || gameState.keys['s']) {
+                    player.y = Math.min(canvasRef.current.height - player.height, player.y + player.speed);
+                }
+                
+                // Shooting
+                const now = Date.now();
+                if ((gameState.keys[' '] || gameState.keys['Spacebar']) && now - gameState.lastShot > gameState.shotCooldown) {
+                    gameState.bullets.push({
+                        x: player.x + player.width / 2,
+                        y: player.y,
+                        size: 6,
+                        speed: 8,
+                        color: `hsl(${Math.random() * 60 + 180}, 100%, 70%)`,
+                        trail: []
+                    });
+                    gameState.lastShot = now;
+                    
+                    // Play shoot sound
+                    if (synthRef.current && audioEnabled) {
+                        synthRef.current.triggerAttackRelease("C5", "8n");
+                    }
+                }
+                
+                // Spawn enemies
+                if (now - gameState.lastEnemySpawn > gameState.enemySpawnRate) {
+                    const size = 20 + Math.random() * 30;
+                    const type = Math.floor(Math.random() * 3); // 0: basic, 1: medium, 2: heavy
+                    gameState.enemies.push({
+                        x: Math.random() * (canvasRef.current.width - size),
+                        y: -size,
+                        size: size,
+                        speed: 1 + Math.random() * 3,
+                        health: Math.floor(size / 10) + type,
+                        maxHealth: Math.floor(size / 10) + type,
+                        color: `hsl(${Math.random() * 60}, 100%, 50%)`,
+                        type: type,
+                        rotation: 0,
+                        rotationSpeed: (Math.random() - 0.5) * 0.05
+                    });
+                    gameState.lastEnemySpawn = now;
+                    
+                    // Increase difficulty over time
+                    if (gameState.enemySpawnRate > 300) {
+                        gameState.enemySpawnRate -= 5;
+                    }
+                }
+                
+                // Update bullets
+                gameState.bullets = gameState.bullets.filter(bullet => {
+                    // Update trail
+                    bullet.trail.push({x: bullet.x, y: bullet.y});
+                    if (bullet.trail.length > 10) {
+                        bullet.trail.shift();
+                    }
+                    
+                    bullet.y -= bullet.speed;
+                    return bullet.y > -bullet.size;
+                });
+                
+                // Update enemies
+                gameState.enemies = gameState.enemies.filter(enemy => {
+                    enemy.y += enemy.speed;
+                    enemy.rotation += enemy.rotationSpeed;
+                    return enemy.y < canvasRef.current.height;
+                });
+                
+                // Update particles
+                gameState.particles = gameState.particles.filter(particle => {
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+                    particle.life -= 0.01;
+                    particle.rotation += particle.rotationSpeed;
+                    return particle.life > 0;
+                });
+                
+                // Check collisions
+                checkCollisions();
+                
+                // Update audio intensity based on grief level
+                if (gainRef.current && filterRef.current) {
+                    const targetIntensity = Math.min(1, griefLevel / 20);
+                    gameState.audioIntensity += (targetIntensity - gameState.audioIntensity) * 0.05;
+                    gainRef.current.gain.value = 0.3 + gameState.audioIntensity * 0.7;
+                    
+                    // Adjust filter frequency based on grief level
+                    const targetFrequency = 800 - (griefLevel * 30);
+                    filterRef.current.frequency.value = Math.max(200, targetFrequency);
+                    
+                    // Update audio level display
+                    setAudioLevel(Math.floor(30 + gameState.audioIntensity * 70));
+                }
+            };
+            
+            const checkCollisions = () => {
+                const gameState = gameStateRef.current;
+                
+                // Bullet-enemy collisions
+                for (let i = gameState.bullets.length - 1; i >= 0; i--) {
+                    const bullet = gameState.bullets[i];
+                    
+                    for (let j = gameState.enemies.length - 1; j >= 0; j--) {
+                        const enemy = gameState.enemies[j];
+                        
+                        // Simple distance-based collision for circular objects
+                        const dx = bullet.x - (enemy.x + enemy.size/2);
+                        const dy = bullet.y - (enemy.y + enemy.size/2);
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < bullet.size + enemy.size/2) {
+                            // Hit!
+                            enemy.health--;
+                            gameState.bullets.splice(i, 1);
+                            
+                            // Create particles
+                            createParticles(enemy.x + enemy.size/2, enemy.y + enemy.size/2, enemy.color, 'explosion');
+                            
+                            if (enemy.health <= 0) {
+                                // Enemy destroyed
+                                gameState.enemies.splice(j, 1);
+                                setScore(prev => prev + 10);
+                                
+                                // Play explosion sound
+                                if (synthRef.current && audioEnabled) {
+                                    synthRef.current.triggerAttackRelease("C3", "16n");
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+                
+                // Player-enemy collisions
+                const player = gameState.player;
+                
+                for (let i = gameState.enemies.length - 1; i >= 0; i--) {
+                    const enemy = gameState.enemies[i];
+                    
+                    // Simple distance-based collision for circular objects
+                    const dx = (player.x + player.width/2) - (enemy.x + enemy.size/2);
+                    const dy = (player.y + player.height/2) - (enemy.y + enemy.size/2);
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < player.width/2 + enemy.size/2) {
+                        // Player hit!
+                        gameState.enemies.splice(i, 1);
+                        const damage = 10 + Math.floor(Math.random() * 10);
+                        setHealth(prev => {
+                            const newHealth = Math.max(0, prev - damage);
+                            if (newHealth <= 0) {
+                                endGame();
+                            }
+                            return newHealth;
+                        });
+                        
+                        // Increase grief level
+                        setGriefLevel(prev => prev + 1);
+                        
+                        // Create a flower that remembers the trauma
+                        const flower = {
+                            x: player.x + player.width/2,
+                            y: player.y + player.height/2,
+                            size: 5 + Math.random() * 10,
+                            trauma: damage,
+                            color: `hsl(${300 + Math.random() * 60}, 80%, 60%)`,
+                            growth: 0,
+                            maxGrowth: 20 + damage * 2,
+                            petals: 5 + Math.floor(damage / 5),
+                            rotation: Math.random() * Math.PI * 2,
+                            rotationSpeed: (Math.random() - 0.5) * 0.02
+                        };
+                        gameState.flowers.push(flower);
+                        setFlowers(prev => prev + 1);
+                        
+                        // Play damage sound
+                        if (synthRef.current && audioEnabled) {
+                            synthRef.current.triggerAttackRelease("G2", "8n");
+                        }
+                        
+                        // Play grief bloom sound
+                        if (droneRef.current && audioEnabled) {
+                            const note = ["C2", "D2", "E2", "F2", "G2"][Math.floor(Math.random() * 5)];
+                            droneRef.current.triggerAttackRelease(note, "4n");
+                        }
+                        
+                        // Create particles
+                        createParticles(player.x + player.width/2, player.y + player.height/2, "#ff3366", 'damage');
+                    }
+                }
+            };
+            
+            const createParticles = (x, y, color, type) => {
+                const gameState = gameStateRef.current;
+                const particleCount = type === 'explosion' ? 30 : 20;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 1 + Math.random() * 3;
+                    const size = 2 + Math.random() * 4;
+                    const shapeType = Math.floor(Math.random() * 3); // 0: triangle, 1: square, 2: hexagon
+                    
+                    gameState.particles.push({
+                        x,
+                        y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        size: size,
+                        color: color,
+                        life: 1,
+                        rotation: Math.random() * Math.PI * 2,
+                        rotationSpeed: (Math.random() - 0.5) * 0.1,
+                        shapeType: shapeType
+                    });
+                }
+            };
+            
+            const drawPlayer = (ctx, player) => {
+                const gameState = gameStateRef.current;
+                const centerX = player.x + player.width / 2;
+                const centerY = player.y + player.height / 2;
+                
+                // Draw engine glow based on movement
+                if (gameState.keys['ArrowLeft'] || gameState.keys['ArrowRight'] || 
+                    gameState.keys['ArrowUp'] || gameState.keys['ArrowDown']) {
+                    const engineSize = 10 + Math.random() * 5;
+                    const gradient = ctx.createRadialGradient(
+                        centerX, centerY + player.height/2, 0,
+                        centerX, centerY + player.height/2, engineSize
+                    );
+                    gradient.addColorStop(0, 'rgba(0, 200, 255, 0.8)');
+                    gradient.addColorStop(1, 'rgba(0, 100, 255, 0)');
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY + player.height/2, engineSize, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Draw player ship (geometric design)
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                
+                // Ship body
+                ctx.fillStyle = '#00ffff';
+                ctx.beginPath();
+                ctx.moveTo(0, -player.height/2);
+                ctx.lineTo(-player.width/2, player.height/2);
+                ctx.lineTo(-player.width/4, player.height/3);
+                ctx.lineTo(0, player.height/4);
+                ctx.lineTo(player.width/4, player.height/3);
+                ctx.lineTo(player.width/2, player.height/2);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Ship details
+                ctx.strokeStyle = '#ff5500';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Energy core
+                const coreSize = 8 + 4 * Math.sin(Date.now() / 200);
+                const coreGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, coreSize);
+                coreGradient.addColorStop(0, 'rgba(255, 200, 0, 1)');
+                coreGradient.addColorStop(1, 'rgba(255, 100, 0, 0.3)');
+                ctx.fillStyle = coreGradient;
+                ctx.beginPath();
+                ctx.arc(0, 0, coreSize, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Add glow based on rhythm
+                if (gameState.visualIntensity > 0) {
+                    ctx.shadowColor = '#ff5500';
+                    ctx.shadowBlur = 15 * gameState.visualIntensity;
+                    ctx.strokeStyle = '#ff5500';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+                
+                ctx.restore();
+            };
+            
+            const drawEnemy = (ctx, enemy) => {
+                const centerX = enemy.x + enemy.size / 2;
+                const centerY = enemy.y + enemy.size / 2;
+                
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(enemy.rotation);
+                
+                // Different enemy designs based on type
+                if (enemy.type === 0) {
+                    // Basic enemy - triangle
+                    ctx.fillStyle = enemy.color;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -enemy.size/2);
+                    ctx.lineTo(-enemy.size/2, enemy.size/2);
+                    ctx.lineTo(enemy.size/2, enemy.size/2);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // Enemy details
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    
+                    // Energy core
+                    ctx.fillStyle = '#ff0000';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, enemy.size/4, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (enemy.type === 1) {
+                    // Medium enemy - diamond
+                    ctx.fillStyle = enemy.color;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -enemy.size/2);
+                    ctx.lineTo(enemy.size/2, 0);
+                    ctx.lineTo(0, enemy.size/2);
+                    ctx.lineTo(-enemy.size/2, 0);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // Enemy details
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    
+                    // Energy cores
+                    ctx.fillStyle = '#ff0000';
+                    ctx.beginPath();
+                    ctx.arc(-enemy.size/4, 0, enemy.size/6, 0, Math.PI * 2);
+                    ctx.arc(enemy.size/4, 0, enemy.size/6, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // Heavy enemy - hexagon
+                    ctx.fillStyle = enemy.color;
+                    ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (i / 6) * Math.PI * 2;
+                        const x = Math.cos(angle) * enemy.size/2;
+                        const y = Math.sin(angle) * enemy.size/2;
+                        if (i === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // Enemy details
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    
+                    // Central core
+                    const coreSize = enemy.size/3;
+                    ctx.fillStyle = '#ff0000';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, coreSize, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Rotating ring
+                    ctx.strokeStyle = '#ff5500';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, coreSize * 1.5, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                
+                // Draw enemy health
+                ctx.restore();
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(enemy.x, enemy.y - 10, enemy.size, 3);
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(enemy.x, enemy.y - 10, enemy.size * (enemy.health / enemy.maxHealth), 3);
+            };
+            
+            const drawBullet = (ctx, bullet) => {
+                // Draw bullet trail
+                if (bullet.trail.length > 1) {
+                    ctx.strokeStyle = bullet.color;
+                    ctx.lineWidth = bullet.size / 2;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(bullet.trail[0].x, bullet.trail[0].y);
+                    
+                    for (let i = 1; i < bullet.trail.length; i++) {
+                        const alpha = i / bullet.trail.length;
+                        ctx.globalAlpha = alpha * 0.7;
+                        ctx.lineTo(bullet.trail[i].x, bullet.trail[i].y);
+                    }
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                }
+                
+                // Draw energy bolt
+                const gradient = ctx.createRadialGradient(
+                    bullet.x, bullet.y, 0,
+                    bullet.x, bullet.y, bullet.size
+                );
+                gradient.addColorStop(0, '#ffffff');
+                gradient.addColorStop(0.7, bullet.color);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Add glow
+                ctx.shadowColor = bullet.color;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(bullet.x, bullet.y, bullet.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            };
+            
+            const drawFlower = (ctx, flower) => {
+                if (flower.growth < flower.maxGrowth) {
+                    flower.growth += 0.2;
+                }
+                
+                const size = flower.size + flower.growth;
+                
+                ctx.save();
+                ctx.translate(flower.x, flower.y);
+                ctx.rotate(flower.rotation);
+                
+                // Draw crystalline stem
+                ctx.strokeStyle = '#2a5d2a';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, size * 3);
+                ctx.stroke();
+                
+                // Draw geometric petals
+                ctx.fillStyle = flower.color;
+                for (let i = 0; i < flower.petals; i++) {
+                    const angle = (i / flower.petals) * Math.PI * 2;
+                    const petalX = Math.cos(angle) * size;
+                    const petalY = Math.sin(angle) * size;
+                    
+                    ctx.save();
+                    ctx.translate(petalX, petalY);
+                    ctx.rotate(angle);
+                    
+                    // Draw geometric petal (hexagon)
+                    ctx.beginPath();
+                    for (let j = 0; j < 6; j++) {
+                        const petalAngle = (j / 6) * Math.PI * 2;
+                        const x = Math.cos(petalAngle) * size/2;
+                        const y = Math.sin(petalAngle) * size;
+                        if (j === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // Add geometric pattern to petal
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    
+                    ctx.restore();
+                }
+                
+                // Draw crystalline center
+                const centerGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size/3);
+                centerGradient.addColorStop(0, '#ffcc00');
+                centerGradient.addColorStop(1, 'rgba(255, 200, 0, 0.3)');
+                ctx.fillStyle = centerGradient;
+                
+                // Draw hexagonal center
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i / 6) * Math.PI * 2;
+                    const x = Math.cos(angle) * size/3;
+                    const y = Math.sin(angle) * size/3;
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.closePath();
+                ctx.fill();
+                
+                // Draw trauma indicator (geometric pulse)
+                const pulse = Math.sin(Date.now() / 500) * 0.2 + 0.8;
+                ctx.fillStyle = `rgba(255, 0, 0, ${flower.trauma / 50})`;
+                
+                // Draw rotating trauma indicator
+                ctx.save();
+                ctx.rotate(Date.now() / 1000);
+                ctx.beginPath();
+                for (let i = 0; i < 4; i++) {
+                    const angle = (i / 4) * Math.PI * 2;
+                    const x = Math.cos(angle) * size/4 * pulse;
+                    const y = Math.sin(angle) * size/4 * pulse;
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+                
+                ctx.restore();
+            };
+            
+            const drawParticle = (ctx, particle) => {
+                ctx.save();
+                ctx.translate(particle.x, particle.y);
+                ctx.rotate(particle.rotation);
+                ctx.globalAlpha = particle.life;
+                
+                ctx.fillStyle = particle.color;
+                
+                // Draw different geometric shapes based on type
+                if (particle.shapeType === 0) {
+                    // Triangle
+                    ctx.beginPath();
+                    ctx.moveTo(0, -particle.size);
+                    ctx.lineTo(-particle.size, particle.size);
+                    ctx.lineTo(particle.size, particle.size);
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (particle.shapeType === 1) {
+                    // Square
+                    ctx.fillRect(-particle.size, -particle.size, particle.size * 2, particle.size * 2);
+                } else {
+                    // Hexagon
+                    ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (i / 6) * Math.PI * 2;
+                        const x = Math.cos(angle) * particle.size;
+                        const y = Math.sin(angle) * particle.size;
+                        if (i === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            };
+            
+            const drawGrid = (ctx, width, height) => {
+                const gameState = gameStateRef.current;
+                const gridSize = 40;
+                
+                ctx.strokeStyle = 'rgba(255, 85, 0, 0.1)';
+                ctx.lineWidth = 1;
+                
+                // Draw vertical lines
+                for (let x = -gridSize + (gameState.gridOffset % gridSize); x < width; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                    ctx.stroke();
+                }
+                
+                // Draw horizontal lines
+                for (let y = -gridSize + (gameState.gridOffset % gridSize); y < height; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                }
+            };
+            
+            const renderGame = (ctx, width, height) => {
+                const gameState = gameStateRef.current;
+                
+                // Clear canvas
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                ctx.fillRect(0, 0, width, height);
+                
+                // Draw background grid
+                drawGrid(ctx, width, height);
+                
+                // Draw background effect based on visual intensity
+                if (gameState.visualIntensity > 0) {
+                    const gradient = ctx.createRadialGradient(
+                        width/2, height/2, 0,
+                        width/2, height/2, width/2
+                    );
+                    gradient.addColorStop(0, `rgba(255, 85, 0, ${gameState.visualIntensity * 0.1})`);
+                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, width, height);
+                }
+                
+                // Draw flowers
+                gameState.flowers.forEach(flower => {
+                    drawFlower(ctx, flower);
+                });
+                
+                // Draw particles
+                gameState.particles.forEach(particle => {
+                    drawParticle(ctx, particle);
+                });
+                
+                // Draw player
+                drawPlayer(ctx, gameState.player);
+                
+                // Draw bullets
+                gameState.bullets.forEach(bullet => {
+                    drawBullet(ctx, bullet);
+                });
+                
+                // Draw enemies
+                gameState.enemies.forEach(enemy => {
+                    drawEnemy(ctx, enemy);
+                });
+            };
+            
+            const startGame = () => {
+                // Stop the current game loop if it's running
+                if (gameStateRef.current) {
+                    gameStateRef.current.gameRunning = false;
+                }
+                
+                // Reset game state
+                setGameStarted(true);
+                setGameOver(false);
+                setScore(0);
+                setHealth(100);
+                setFlowers(0);
+                setGriefLevel(0);
+                setAudioLevel(30);
+                
+                // Reset game state reference
+                gameStateRef.current = {
+                    player: { x: 400, y: 500, width: 40, height: 40, speed: 5 },
+                    bullets: [],
+                    enemies: [],
+                    flowers: [],
+                    particles: [],
+                    lastShot: 0,
+                    shotCooldown: 300,
+                    enemySpawnRate: 1000,
+                    lastEnemySpawn: 0,
+                    keys: {},
+                    gameRunning: false, // Will be set to true in useEffect
+                    rhythm: [],
+                    lastRhythmTime: 0,
+                    visualIntensity: 0,
+                    audioIntensity: 0,
+                    audioInitialized: gameStateRef.current ? gameStateRef.current.audioInitialized : false,
+                    gridOffset: 0
+                };
+                
+                // Clear the canvas
+                const canvas = canvasRef.current;
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+            };
+            
+            const endGame = () => {
+                setGameOver(true);
+                gameStateRef.current.gameRunning = false;
+                
+                // Play game over sound
+                if (synthRef.current && audioEnabled) {
+                    synthRef.current.triggerAttackRelease("C2", "4n");
+                }
+            };
+            
+            const toggleAudio = () => {
+                setAudioEnabled(!audioEnabled);
+            };
+            
+            return (
+                <div className="game-container">
+                    <div className="game-header">
+                        <h1 className="game-title">SHADOWEED</h1>
+                        <p className="game-subtitle">SYNAESTHETIC SHOOTER</p>
+                    </div>
+                    
+                    {/* Game Stats Panel */}
+                    {gameStarted && (
+                        <div className="data-panel game-stats">
+                            <div className="corner-decoration top-left"></div>
+                            <div className="corner-decoration top-right"></div>
+                            <div className="corner-decoration bottom-left"></div>
+                            <div className="corner-decoration bottom-right"></div>
+                            
+                            <div className="panel-header">
+                                H4 REPORT <span>(3/8)</span>
+                                <span className="panel-status"></span>
+                            </div>
+                            
+                            <div className="stat-item">
+                                <span className="stat-label">SCORE</span>
+                                <span className="stat-value">{score}</span>
+                            </div>
+                            
+                            <div className="stat-item">
+                                <span className="stat-label">HEALTH</span>
+                                <span className="stat-value">{health}%</span>
+                            </div>
+                            
+                            <div className="health-bar-container">
+                                <div className="health-fill" style={{ width: `${health}%` }}></div>
+                            </div>
+                            
+                            <div className="data-row">
+                                <span className="data-label">STATUS</span>
+                                <span className="data-value">ACTIVE</span>
+                            </div>
+                            
+                            <div className="data-row">
+                                <span className="data-label">SYSTEM</span>
+                                <span className="data-value">ONLINE</span>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Garden Panel */}
+                    {gameStarted && (
+                        <div className="data-panel garden-panel">
+                            <div className="corner-decoration top-left"></div>
+                            <div className="corner-decoration top-right"></div>
+                            <div className="corner-decoration bottom-left"></div>
+                            <div className="corner-decoration bottom-right"></div>
+                            
+                            <div className="panel-header">
+                                R4 LIST 02 - 05
+                                <span className="panel-status"></span>
+                            </div>
+                            
+                            <div className="garden-stats">
+                                <span className="stat-label">FLOWERS</span>
+                                <span className="garden-value">
+                                    <span className="flower-indicator"></span>
+                                    {flowers}
+                                </span>
+                            </div>
+                            
+                            <div className="garden-stats">
+                                <span className="stat-label">GRIEF</span>
+                                <span className="garden-value">{griefLevel}</span>
+                            </div>
+                            
+                            <div className="data-row">
+                                <span className="data-label">STATION</span>
+                                <span className="data-value">ACTIVE</span>
+                            </div>
+                            
+                            <div className="data-row">
+                                <span className="data-label">TIME</span>
+                                <span className="data-value">ONLINE</span>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* System Panel */}
+                    {gameStarted && (
+                        <div className="data-panel system-panel">
+                            <div className="corner-decoration top-left"></div>
+                            <div className="corner-decoration top-right"></div>
+                            <div className="corner-decoration bottom-left"></div>
+                            <div className="corner-decoration bottom-right"></div>
+                            
+                            <div className="panel-header">
+                                FNO3 GEO
+                                <span className="panel-status"></span>
+                            </div>
+                            
+                            <div className="system-item">
+                                <span className="system-name">VISUAL INTENSITY</span>
+                                <span className="system-value">{Math.floor(gameStateRef.current.visualIntensity * 100)}%</span>
+                            </div>
+                            
+                            <div className="system-item">
+                                <span className="system-name">RHYTHM SYNC</span>
+                                <span className="system-value online">SYNCED</span>
+                            </div>
+                            
+                            <div className="system-item">
+                                <span className="system-name">PARTICLE SYS</span>
+                                <span className="system-value online">ACTIVE</span>
+                            </div>
+                            
+                            <div className="system-item">
+                                <span className="system-name">GROWTH RATE</span>
+                                <span className="system-value">{flowers > 0 ? (griefLevel / flowers).toFixed(2) : '0.00'}</span>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Audio Panel */}
+                    {gameStarted && (
+                        <div className="data-panel audio-panel">
+                            <div className="corner-decoration top-left"></div>
+                            <div className="corner-decoration top-right"></div>
+                            <div className="corner-decoration bottom-left"></div>
+                            <div className="corner-decoration bottom-right"></div>
+                            
+                            <div className="panel-header">
+                                H9 STATISTICS
+                                <span className="panel-status"></span>
+                            </div>
+                            
+                            <div className="audio-controls">
+                                <button className="audio-toggle" onClick={toggleAudio}>
+                                    {audioEnabled ? "AUDIO ON" : "AUDIO OFF"}
+                                </button>
+                                <span className="stat-value">{audioLevel}%</span>
+                            </div>
+                            
+                            <div className="audio-level">
+                                <div className="audio-fill" style={{ width: `${audioLevel}%` }}></div>
+                            </div>
+                            
+                            <div className="data-row">
+                                <span className="data-label">GRIEF-BLOOM</span>
+                                <span className="data-value">{Math.floor(gameStateRef.current.audioIntensity * 100)}%</span>
+                            </div>
+                        </div>
+                    )}
+                    
+                    <canvas ref={canvasRef}></canvas>
+                    
+                    <div className="game-controls">
+                        {/* No buttons here */}
+                    </div>
+                    
+                    {!gameStarted && (
+                        <div className="start-screen">
+                            <div className="start-content">
+                                <div className="corner-decoration top-left"></div>
+                                <div className="corner-decoration top-right"></div>
+                                <div className="corner-decoration bottom-left"></div>
+                                <div className="corner-decoration bottom-right"></div>
+                                
+                                <h1 className="game-title">SHADOWEED</h1>
+                                <p className="game-subtitle">SYNAESTHETIC SHOOTER</p>
+                                
+                                <div className="game-description">
+                                    <p>GROW AND FIGHT AT THE SAME TIME</p>
+                                    <p>EVERY HIT YOU TAKE MAKES YOUR GARDEN STRONGER</p>
+                                    <p>BUT EACH FLOWER REMEMBERS YOUR TRAUMA</p>
+                                </div>
+                                
+                                <div className="instructions">
+                                    <h3>SYSTEM CONTROLS</h3>
+                                    <div className="instructions-grid">
+                                        <div className="instruction-item">
+                                            <div className="instruction-icon">⬅️➡️</div>
+                                            <div className="instruction-text">MOVE: ARROW KEYS OR WASD</div>
+                                        </div>
+                                        <div className="instruction-item">
+                                            <div className="instruction-icon">🚀</div>
+                                            <div className="instruction-text">SHOOT: SPACEBAR</div>
+                                        </div>
+                                        <div className="instruction-item">
+                                            <div className="instruction-icon">🌱</div>
+                                            <div className="instruction-text">EVERY HIT GROWS YOUR GARDEN</div>
+                                        </div>
+                                        <div className="instruction-item">
+                                            <div className="instruction-icon">💔</div>
+                                            <div className="instruction-text">EACH FLOWER REMEMBERS TRAUMA</div>
+                                        </div>
+                                        <div className="instruction-item">
+                                            <div className="instruction-icon">🎨</div>
+                                            <div className="instruction-text">VISUALS RESPOND TO RHYTHM</div>
+                                        </div>
+                                        <div className="instruction-item">
+                                            <div className="instruction-icon">🎵</div>
+                                            <div className="instruction-text">AUDIO INTENSIFIES WITH GRIEF</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button className="start-btn" onClick={startGame}>INITIALIZE SYSTEM</button>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {gameOver && (
+                        <div className="game-over" style={{display: 'flex'}}>
+                            <div className="game-over-content">
+                                <div className="corner-decoration top-left"></div>
+                                <div className="corner-decoration top-right"></div>
+                                <div className="corner-decoration bottom-left"></div>
+                                <div className="corner-decoration bottom-right"></div>
+                                
+                                <h2>SYSTEM FAILURE</h2>
+                                <p>FINAL SCORE: {score}</p>
+                                <p>FLOWERS GROWN: {flowers}</p>
+                                <p>GRIEF LEVEL: {griefLevel}</p>
+                                <button className="start-btn" onClick={startGame}>RESTART SYSTEM</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+        
+        ReactDOM.render(<ShadoweedGame />, document.getElementById('root'));
+    </script>
+</body>
+</html>
